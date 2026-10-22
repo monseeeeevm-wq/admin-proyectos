@@ -1,0 +1,38 @@
+pipeline {
+    agent any
+
+    tools {
+        jdk 'jdk-21'
+        maven 'maven-3.9.10'
+    }
+
+    stages {
+        stage('Versiones') {
+            steps {
+                bat 'java -version'
+                bat 'mvn -v'
+            }
+        }
+        stage('Compilar y probar') {
+            steps {
+                dir('Ejercicio5MyAPIGestor') {
+                    bat 'mvn -B clean test -Dtest=*ControllerTest'
+                }
+            }
+        }
+        stage('Empaquetar') {
+            steps {
+                dir('Ejercicio5MyAPIGestor') {
+                    bat 'mvn -B package -DskipTests'
+                }
+            }
+        }
+    }
+
+    post {
+        always {
+            junit allowEmptyResults: true, testResults: 'Ejercicio5MyAPIGestor/target/surefire-reports/*.xml'
+            archiveArtifacts artifacts: 'Ejercicio5MyAPIGestor/target/*.jar, Ejercicio5MyAPIGestor/target/site/jacoco/**', allowEmptyArchive: true
+        }
+    }
+}

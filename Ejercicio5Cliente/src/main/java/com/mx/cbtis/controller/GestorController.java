@@ -19,6 +19,8 @@ import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.client.HttpClientErrorException;
+import org.springframework.web.client.RestClientException;
 import org.springframework.web.client.RestTemplate;
 import org.springframework.web.servlet.ModelAndView;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
@@ -82,33 +84,48 @@ public class GestorController {
 	
 	@PostMapping("/saveProyecto")
 	public ModelAndView setSaveProyecto(@ModelAttribute Proyectos proyecto) {
-
-    	RestTemplate template = new RestTemplate();
-    	String urlservicebd = "http://localhost:8081/addProyecto";
-    	ResponseEntity<Integer> response = template.postForEntity(urlservicebd,proyecto,Integer.class);
-
-    	return new ModelAndView("redirect:/inicio");
-
+		String error = validarProyecto(proyecto);
+		if (error != null) {
+			ModelAndView mav = new ModelAndView("inicio");
+			mav.addObject("proyectos", new Proyectos());
+			mav.addObject("error", error);
+			return mav;
+		}
+		RestTemplate template = new RestTemplate();
+		String urlservicebd = "http://localhost:8081/addProyecto";
+		ResponseEntity<Integer> response = template.postForEntity(urlservicebd, proyecto, Integer.class);
+		return new ModelAndView("redirect:/inicio");
 	}
-	
+
+	private String validarProyecto(Proyectos p) {
+		if (p == null || vacio(p.getNombre()) || vacio(p.getDescripcion())
+				|| vacio(p.getFecha_inicio()) || vacio(p.getFecha_finalizacion())) {
+			return "Datos incompletos: nombre, descripción y fechas son obligatorios";
+		}
+		return null;
+	}
+
+	private boolean vacio(String s) {
+		return s == null || s.trim().isEmpty();
+	}
+
 	@PostMapping("/consultarProyectos")
 	public ResponseEntity<Object> consultarProyectos(Model modelo) {
-		
-		RestTemplate template = new RestTemplate();
-		String urlservicebd = "http://localhost:8081/buscarProyectos";
-		HttpHeaders headers = new HttpHeaders();
-		headers.setContentType(MediaType.APPLICATION_JSON);
-		Proyectos[]  response = template.postForObject(urlservicebd, headers, Proyectos[].class);
-		List<Proyectos> proyectos = Arrays.asList(response);
-		modelo.addAttribute("listaProyectos", proyectos);
-		
-		//ResponseEntity<List<Proyectos>> respuesta = (ResponseEntity<List<Proyectos>>) proyectos;
-		
-		ResponseEntity<Object> objeto = new ResponseEntity<Object>(proyectos, HttpStatusCode.valueOf(200));
-	
-		return objeto;
+		try {
+			RestTemplate template = new RestTemplate();
+			String urlservicebd = "http://localhost:8081/buscarProyectos";
+			HttpHeaders headers = new HttpHeaders();
+			headers.setContentType(MediaType.APPLICATION_JSON);
+			Proyectos[] response = template.postForObject(urlservicebd, headers, Proyectos[].class);
+			List<Proyectos> proyectos = Arrays.asList(response);
+			modelo.addAttribute("listaProyectos", proyectos);
+			return new ResponseEntity<Object>(proyectos, HttpStatusCode.valueOf(200));
+		} catch (RestClientException e) {
+			return new ResponseEntity<Object>("No fue posible consultar los proyectos: " + e.getMessage(),
+					HttpStatus.BAD_GATEWAY);
+		}
 	}
-	
+
 	@PostMapping("/eliminarProyecto")
 	public ModelAndView eliminarProyecto(@RequestBody Proyectos proyecto) {
 		System.out.println("El id del proyecto es: " + proyecto.getId_proyecto());
@@ -120,20 +137,27 @@ public class GestorController {
 		return new ModelAndView("redirect:/inicio");
 	}
 	
-	@PostMapping ("/actualizarProyecto")
+	@PostMapping("/actualizarProyecto")
 	public ResponseEntity<Object> updateProyecto(@RequestBody Proyectos proyecto) {
-		RestTemplate  template = new RestTemplate();
-		Map<String,Integer> params = new HashMap<String,Integer>();
-		params.put("id_proyecto", proyecto.getId_proyecto());
-		String urlservicebd = "http://localhost:8081/buscarProyecto?id_proyecto={id_proyecto}";
-		Proyectos proyectos = template.getForObject(urlservicebd, Proyectos.class, params);
-		
-		ResponseEntity<Object> objeto = new ResponseEntity<Object>(proyectos, HttpStatusCode.valueOf(200));
-		
-		return objeto;
+		try {
+			RestTemplate template = new RestTemplate();
+			Map<String, Integer> params = new HashMap<String, Integer>();
+			params.put("id_proyecto", proyecto.getId_proyecto());
+			String urlservicebd = "http://localhost:8081/buscarProyecto?id_proyecto={id_proyecto}";
+			Proyectos proyectos = template.getForObject(urlservicebd, Proyectos.class, params);
+			return new ResponseEntity<Object>(proyectos, HttpStatusCode.valueOf(200));
+		} catch (HttpClientErrorException e) {
+			if (e.getStatusCode().value() == 404) {
+				return new ResponseEntity<Object>("El proyecto solicitado no existe", HttpStatus.NOT_FOUND);
+			}
+			return new ResponseEntity<Object>("No fue posible consultar el proyecto: " + e.getMessage(),
+					HttpStatus.BAD_GATEWAY);
+		} catch (RestClientException e) {
+			return new ResponseEntity<Object>("No fue posible consultar el proyecto: " + e.getMessage(),
+					HttpStatus.BAD_GATEWAY);
+		}
 	}
-	
-	
+
 	@PostMapping("/verificarLogin")
 	public ResponseEntity<Usuario> verificarUsuario(@RequestBody Usuario paramUser) {
 		String urlservicebd = "http://localhost:8081/getUsuarioLogin";

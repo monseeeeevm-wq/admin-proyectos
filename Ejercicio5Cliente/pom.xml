@@ -14,7 +14,7 @@
 	<name>Ejercicio5Cliente</name>
 	<description>Interfaz del Gestor de Proyectos</description>
 	<properties>
-		<java.version>17</java.version>
+		<java.version>21</java.version>
 		<jacoco.version>0.8.11</jacoco.version>
 	</properties>
 	<dependencies>
@@ -81,6 +81,13 @@
 					</goals>
 				</execution>
 			</executions>
+		</plugin>
+
+		<!-- Plugin SonarQube para el análisis de calidad de código -->
+		<plugin>
+			<groupId>org.sonarsource.scanner.maven</groupId>
+			<artifactId>sonar-maven-plugin</artifactId>
+			<version>5.5.0.6356</version>
 		</plugin>
 		</plugins>
 	</build>

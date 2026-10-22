@@ -2,6 +2,12 @@ package com.mx.cbtis.bromitas;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyMap;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.mockConstruction;
+import static org.mockito.Mockito.when;
 import static org.springframework.test.web.client.match.MockRestRequestMatchers.method;
 import static org.springframework.test.web.client.match.MockRestRequestMatchers.requestTo;
 import static org.springframework.test.web.client.response.MockRestResponseCreators.withSuccess;
@@ -10,6 +16,7 @@ import java.util.List;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.mockito.MockedConstruction;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.HttpMethod;
@@ -100,14 +107,21 @@ public class GestorControllerTest {
 
     @Test
     public void testSetSaveProyecto() {
+        // Proyecto con todos los campos obligatorios para que pase la validación del controlador.
         Proyectos proyecto = new Proyectos();
+        proyecto.setNombre("Proyecto Test");
+        proyecto.setDescripcion("Descripción de prueba");
+        proyecto.setFecha_inicio("2026-10-16");
+        proyecto.setFecha_finalizacion("2026-12-01");
 
-        mockServer.expect(requestTo("http://localhost:8081/addProyecto"))
-                  .andExpect(method(HttpMethod.POST))
-                  .andRespond(withSuccess("1", MediaType.APPLICATION_JSON));
+        // Se simula la respuesta de la API interceptando la creación del RestTemplate del controlador.
+        try (MockedConstruction<RestTemplate> mocked = mockConstruction(RestTemplate.class,
+                (mock, ctx) -> when(mock.postForEntity(anyString(), any(), eq(Integer.class)))
+                        .thenReturn(ResponseEntity.ok(1)))) {
 
-        ModelAndView mav = controller.setSaveProyecto(proyecto);
-        assertEquals("redirect:/inicio", mav.getViewName());
+            ModelAndView mav = controller.setSaveProyecto(proyecto);
+            assertEquals("redirect:/inicio", mav.getViewName());
+        }
     }
 
     @Test
@@ -143,14 +157,18 @@ public class GestorControllerTest {
         Proyectos proyecto = new Proyectos();
         proyecto.setId_proyecto(1);
 
-        String jsonResponse = "{\"id_proyecto\": 1, \"nombre\": \"Proyecto Actualizado\"}";
+        Proyectos encontrado = new Proyectos();
+        encontrado.setId_proyecto(1);
+        encontrado.setNombre("Proyecto Actualizado");
 
-        mockServer.expect(requestTo("http://localhost:8081/buscarProyecto?id_proyecto=1"))
-                  .andExpect(method(HttpMethod.GET))
-                  .andRespond(withSuccess(jsonResponse, MediaType.APPLICATION_JSON));
+        // Se simula la respuesta de la API para no depender de que el proyecto exista en la BD.
+        try (MockedConstruction<RestTemplate> mocked = mockConstruction(RestTemplate.class,
+                (mock, ctx) -> when(mock.getForObject(anyString(), eq(Proyectos.class), anyMap()))
+                        .thenReturn(encontrado))) {
 
-        ResponseEntity<Object> response = controller.updateProyecto(proyecto);
-        assertEquals(HttpStatus.OK, response.getStatusCode());
+            ResponseEntity<Object> response = controller.updateProyecto(proyecto);
+            assertEquals(HttpStatus.OK, response.getStatusCode());
+        }
     }
 
     @Test

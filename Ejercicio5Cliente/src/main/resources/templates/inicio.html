@@ -33,7 +33,7 @@
         <div class="container">
             <div><p id="titulo">Mis Proyectos</p></div>
 			<div id="cardContainer" class="row"></div>
-			
+			<div th:if="${error}" class="alert alert-danger m-3" th:text="${error}"></div>
             <!-- Modal agregar -->
             <form method="post" th:action="saveProyecto" th:object="${proyectos}">
                 <div class="modal fade" id="staticBackdrop" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1" aria-labelledby="staticBackdropLabel" aria-hidden="true">
