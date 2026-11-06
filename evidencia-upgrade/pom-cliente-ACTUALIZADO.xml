@@ -59,6 +59,12 @@
 			<groupId>org.apache.maven.plugins</groupId>
 			<artifactId>maven-surefire-plugin</artifactId>
 			<version>3.2.5</version>
+			<configuration>
+				<excludes>
+					<!-- Pruebas heredadas que requieren la API real en ejecucion -->
+					<exclude>**/bromitas/**</exclude>
+				</excludes>
+			</configuration>
 		</plugin>
 
 		<!-- Plugin JaCoCo para la cobertura de código -->
@@ -66,6 +72,12 @@
 			<groupId>org.jacoco</groupId>
 			<artifactId>jacoco-maven-plugin</artifactId>
 			<version>${jacoco.version}</version>
+				<configuration>
+					<excludes>
+						<!-- Clase de arranque (solo contiene main); se documenta como exclusion -->
+						<exclude>**/*Application.class</exclude>
+					</excludes>
+				</configuration>
 			<executions>
 				<execution>
 					<id>prepare-agent</id>
