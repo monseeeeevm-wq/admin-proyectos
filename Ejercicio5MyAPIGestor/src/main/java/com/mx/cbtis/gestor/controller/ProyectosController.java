@@ -6,7 +6,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -22,8 +21,11 @@ import com.mx.cbtis.gestor.repository.ProtectosRepository;
 @RestController
 public class ProyectosController {
 
-	@Autowired
-	ProtectosRepository proyectostable;
+	private final ProtectosRepository proyectostable;
+
+	public ProyectosController(ProtectosRepository proyectostable) {
+		this.proyectostable = proyectostable;
+	}
 
 	@GetMapping("/buscarProyecto")
 	public Proyectos getProyecto(@RequestParam int id_proyecto) {
@@ -41,7 +43,7 @@ public class ProyectosController {
 
 		validarFechas(proyecto);
 		int flag = 0;
-		if (!proyecto.equals(null)) {
+		if (proyecto != null) {
 
 			proyectostable.save(proyecto);
 			flag = 1;
@@ -52,22 +54,14 @@ public class ProyectosController {
 
 	@PostMapping("/updateProyecto")
 	public int updateProyecto(@RequestBody Proyectos proyecto) {
-
-		validarFechas(proyecto);
-		int flag = 0;
-		if (!proyecto.equals(null)) {
-			proyectostable.save(proyecto);
-			flag = 1;
-		}
-
-		return flag;
+		return addProyecto(proyecto);
 	}
 
 	@DeleteMapping("/deleteProyecto")
 	public int deleteProyecto(@RequestBody Proyectos proyecto) {
 
 		int flag = 0;
-		if (!proyecto.equals(null)) {
+		if (proyecto != null) {
 			proyectostable.delete(proyecto);
 			flag = 1;
 		}

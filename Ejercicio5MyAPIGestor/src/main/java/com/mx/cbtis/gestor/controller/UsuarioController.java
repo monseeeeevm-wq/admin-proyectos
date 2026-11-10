@@ -4,7 +4,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -18,8 +17,11 @@ import com.mx.cbtis.gestor.repository.UsuarioRepository;
 @RestController
 public class UsuarioController {
 	
-	@Autowired
-	UsuarioRepository usuariotable;
+	private final UsuarioRepository usuariotable;
+
+	public UsuarioController(UsuarioRepository usuariotable) {
+		this.usuariotable = usuariotable;
+	}
 	
 	@PostMapping("/getUsuarioLogin")
 	public Usuario getUsuarioLogin(@RequestBody Usuario userParam) {
@@ -55,7 +57,7 @@ public class UsuarioController {
 	@PostMapping("/addUsuario")
 	public int addUsuario(@RequestBody Usuario usuario) {
 		int flag = 0;
-		if(!usuario.equals(null)) {
+		if(usuario != null) {
 			usuariotable.save(usuario);
 			flag = 1;
 		}
@@ -65,19 +67,13 @@ public class UsuarioController {
 	
 	@PostMapping("/updateUsuario")
 	public int updateUsuario(@RequestBody Usuario usuario) {
-		int flag = 0;
-		if(!usuario.equals(null)) {
-			usuariotable.save(usuario);
-			flag = 1;
-		}
-		
-		return flag;
+		return addUsuario(usuario);
 	}
 	
 	@DeleteMapping("/deleteUsuario")
 	public int deleteUsuario(@RequestBody Usuario usuario) {
 		int flag = 0;
-		if(!usuario.equals(null)) {
+		if(usuario != null) {
 			usuariotable.delete(usuario);
 			flag = 1;
 		}
