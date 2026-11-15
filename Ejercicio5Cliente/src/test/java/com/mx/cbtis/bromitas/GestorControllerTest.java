@@ -36,7 +36,7 @@ import com.mx.cbtis.modelo.Tareas;
 import com.mx.cbtis.modelo.Usuario;
 
 @SpringBootTest
-public class GestorControllerTest {
+class GestorControllerTest {
 
     @Autowired
     private GestorController controller;
@@ -44,7 +44,7 @@ public class GestorControllerTest {
     private MockRestServiceServer mockServer;
 
     @BeforeEach
-    public void setUp() {
+    void setUp() {
         // Al crear RestTemplate dentro del controlador de forma manual,
         // vinculamos MockRestServiceServer a una nueva instancia para interceptar peticiones.
         RestTemplate restTemplate = new RestTemplate();
@@ -52,31 +52,31 @@ public class GestorControllerTest {
     }
 
     @Test
-    public void testGetHome() {
+    void testGetHome() {
         String viewName = controller.getHome();
         assertEquals("home", viewName);
     }
 
     @Test
-    public void testGetTutorial() {
+    void testGetTutorial() {
         String viewName = controller.getTutorial();
         assertEquals("tutorial", viewName);
     }
 
     @Test
-    public void testGetManual() {
+    void testGetManual() {
         String viewName = controller.getManual();
         assertEquals("manual", viewName);
     }
 
     @Test
-    public void testGetLogin() {
+    void testGetLogin() {
         String viewName = controller.getLogin();
         assertEquals("login", viewName);
     }
 
     @Test
-    public void testGetRegister() {
+    void testGetRegister() {
         Model model = new ConcurrentModel();
         String viewName = controller.getRegister(model);
 
@@ -85,7 +85,7 @@ public class GestorControllerTest {
     }
 
     @Test
-    public void testSetSaveUsuario() {
+    void testSetSaveUsuario() {
         Usuario usuario = new Usuario();
 
         mockServer.expect(requestTo("http://localhost:8081/addUsuario"))
@@ -97,7 +97,7 @@ public class GestorControllerTest {
     }
 
     @Test
-    public void testGetInicio() {
+    void testGetInicio() {
         Model model = new ConcurrentModel();
         String viewName = controller.getInicio(model);
 
@@ -106,7 +106,7 @@ public class GestorControllerTest {
     }
 
     @Test
-    public void testSetSaveProyecto() {
+    void testSetSaveProyecto() {
         // Proyecto con todos los campos obligatorios para que pase la validación del controlador.
         Proyectos proyecto = new Proyectos();
         proyecto.setNombre("Proyecto Test");
@@ -125,7 +125,7 @@ public class GestorControllerTest {
     }
 
     @Test
-    public void testConsultarProyectos() {
+    void testConsultarProyectos() {
         Model model = new ConcurrentModel();
         String jsonResponse = "[{\"id_proyecto\": 1, \"nombre\": \"Proyecto Test\"}]";
 
@@ -140,7 +140,7 @@ public class GestorControllerTest {
     }
 
     @Test
-    public void testEliminarProyecto() {
+    void testEliminarProyecto() {
         Proyectos proyecto = new Proyectos();
         proyecto.setId_proyecto(1);
 
@@ -153,7 +153,7 @@ public class GestorControllerTest {
     }
 
     @Test
-    public void testUpdateProyecto() {
+    void testUpdateProyecto() {
         Proyectos proyecto = new Proyectos();
         proyecto.setId_proyecto(1);
 
@@ -172,7 +172,7 @@ public class GestorControllerTest {
     }
 
     @Test
-    public void testVerificarUsuario() {
+    void testVerificarUsuario() {
         Usuario usuario = new Usuario();
         String jsonResponse = "{\"id\": 1, \"nombre\": \"Usuario Test\"}";
 
@@ -185,7 +185,7 @@ public class GestorControllerTest {
     }
 
     @Test
-    public void testConsultarUsuarios() {
+    void testConsultarUsuarios() {
         Model model = new ConcurrentModel();
         String jsonResponse = "[{\"id\": 1, \"nombre\": \"User1\"}]";
 
@@ -200,7 +200,7 @@ public class GestorControllerTest {
     }
 
     @Test
-    public void testObtenerTareas() {
+    void testObtenerTareas() {
         Tareas tareaParam = new Tareas();
         Model model = new ConcurrentModel();
         String jsonResponse = "[{\"id_tarea\": 1, \"nombre\": \"Tarea 1\"}]";
@@ -216,7 +216,7 @@ public class GestorControllerTest {
     }
 
     @Test
-    public void testObtenerComentarios() {
+    void testObtenerComentarios() {
         Comentarios comentarioParam = new Comentarios();
         Model model = new ConcurrentModel();
         String jsonResponse = "[{\"id_comentario\": 1, \"texto\": \"Comentario 1\"}]";
@@ -232,7 +232,7 @@ public class GestorControllerTest {
     }
 
     @Test
-    public void testGetProyecto() {
+    void testGetProyecto() {
         Model model = new ConcurrentModel();
         String jsonResponse = "[{\"id\": 1, \"nombre\": \"User1\"}]";
 
@@ -249,7 +249,7 @@ public class GestorControllerTest {
     }
 
     @Test
-    public void testGetTarea() {
+    void testGetTarea() {
         Model model = new ConcurrentModel();
         String viewName = controller.getTarea(model);
 
@@ -258,7 +258,7 @@ public class GestorControllerTest {
     }
 
     @Test
-    public void testSetSaveTareas() {
+    void testSetSaveTareas() {
         Tareas tareas = new Tareas();
         tareas.setId_proyecto(5);
 
@@ -273,7 +273,7 @@ public class GestorControllerTest {
     }
 
     @Test
-    public void testSetSaveComentario() {
+    void testSetSaveComentario() {
         Comentarios comentario = new Comentarios();
 
         mockServer.expect(requestTo("http://localhost:8081/addComentario"))
@@ -285,7 +285,7 @@ public class GestorControllerTest {
     }
 
     @Test
-    public void testUpdateTarea() {
+    void testUpdateTarea() {
         Tareas tarea = new Tareas();
         tarea.setId_tarea(10);
 
@@ -300,7 +300,7 @@ public class GestorControllerTest {
     }
 
     @Test
-    public void testEliminarTarea() {
+    void testEliminarTarea() {
         Tareas tarea = new Tareas();
         tarea.setId_tarea(10);
 
@@ -313,7 +313,7 @@ public class GestorControllerTest {
     }
 
     @Test
-    public void testVerificarTarea() {
+    void testVerificarTarea() {
         Tareas tarea = new Tareas();
 
         mockServer.expect(requestTo("http://localhost:8081/addTareas"))
@@ -325,7 +325,7 @@ public class GestorControllerTest {
     }
 
     @Test
-    public void testCambiosTareas() {
+    void testCambiosTareas() {
         Tareas tarea = new Tareas();
 
         mockServer.expect(requestTo("http://localhost:8081/addTareas"))
@@ -337,7 +337,7 @@ public class GestorControllerTest {
     }
 
     @Test
-    public void testConsultarTareas() {
+    void testConsultarTareas() {
         String jsonResponse = "[{\"id_tarea\": 1, \"nombre\": \"Tarea General\"}]";
 
         mockServer.expect(requestTo("http://localhost:8081/buscarTareas"))
@@ -349,7 +349,7 @@ public class GestorControllerTest {
     }
 
     @Test
-    public void testConsultarComentarios() {
+    void testConsultarComentarios() {
         String jsonResponse = "[{\"id_comentario\": 1, \"texto\": \"Comentario General\"}]";
 
         mockServer.expect(requestTo("http://localhost:8081/buscarComentarios"))
