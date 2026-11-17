@@ -6,6 +6,19 @@ pipeline {
         maven 'maven-3.9.10'
     }
 
+    options {
+        timeout(time: 30, unit: 'MINUTES')
+        disableConcurrentBuilds()
+    }
+
+    environment {
+        // Los secretos salen de las credenciales de Jenkins y se muestran como **** en el log
+        SPRING_DATASOURCE_PASSWORD = credentials('db-password')
+        SONAR_TOKEN                = credentials('sonar-token-gestor')
+        SONAR_URL                  = 'http://localhost:9000'
+        PROYECTO                   = 'Ejercicio5MyAPIGestor'
+    }
+
     stages {
         stage('Versiones') {
             steps {
@@ -13,17 +26,21 @@ pipeline {
                 bat 'mvn -v'
             }
         }
-        stage('Compilar y probar') {
+
+        stage('Compilar y probar (JaCoCo)') {
             steps {
                 dir('Ejercicio5MyAPIGestor') {
-                    bat 'mvn -B clean test -Dtest=*ControllerTest'
+                    // clean verify: compila, corre las pruebas y genera el reporte de JaCoCo
+                    bat 'mvn -B clean verify'
                 }
             }
         }
-        stage('Empaquetar') {
+
+        stage('Analisis SonarQube') {
             steps {
                 dir('Ejercicio5MyAPIGestor') {
-                    bat 'mvn -B package -DskipTests'
+                    // El analisis excluye las carpetas target y espera el resultado del Quality Gate
+                    bat 'mvn -B org.sonarsource.scanner.maven:sonar-maven-plugin:5.5.0.6356:sonar "-Dsonar.projectKey=%PROYECTO%" "-Dsonar.projectName=%PROYECTO%" "-Dsonar.host.url=%SONAR_URL%" "-Dsonar.exclusions=**/target/**" "-Dsonar.qualitygate.wait=true"'
                 }
             }
         }
