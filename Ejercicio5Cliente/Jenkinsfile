@@ -6,6 +6,19 @@ pipeline {
         maven 'maven-3.9.10'
     }
 
+    options {
+        timeout(time: 40, unit: 'MINUTES')
+        disableConcurrentBuilds()
+    }
+
+    environment {
+        // Los secretos salen de las credenciales de Jenkins y se muestran como **** en el log
+        SPRING_DATASOURCE_PASSWORD = credentials('db-password')
+        SONAR_TOKEN                = credentials('sonar-token-cliente')
+        SONAR_URL                  = 'http://localhost:9000'
+        PROYECTO                   = 'Ejercicio5Cliente'
+    }
+
     stages {
         stage('Versiones') {
             steps {
@@ -13,17 +26,50 @@ pipeline {
                 bat 'mvn -v'
             }
         }
-        stage('Compilar y probar') {
+
+        stage('Levantar el Gestor (API)') {
+            steps {
+                // Las pruebas del Cliente consumen la API real, asi que primero se empaqueta y arranca el Gestor
+                dir('Ejercicio5MyAPIGestor') {
+                    bat 'mvn -B clean package -DskipTests'
+                }
+                powershell '''
+                    $ErrorActionPreference = "Stop"
+                    if (Get-NetTCPConnection -LocalPort 8081 -State Listen -ErrorAction SilentlyContinue) {
+                        throw "El puerto 8081 ya esta ocupado. Cierra el Gestor local antes de correr este pipeline."
+                    }
+                    $dir = Join-Path $env:WORKSPACE "Ejercicio5MyAPIGestor"
+                    $jar = Get-ChildItem (Join-Path $dir "target") -Filter "Ejercicio5MyAPIGestor-*.jar" | Select-Object -First 1
+                    $p = Start-Process -FilePath "java" -ArgumentList "-jar", $jar.FullName -WorkingDirectory $dir -RedirectStandardOutput (Join-Path $dir "gestor.log") -RedirectStandardError (Join-Path $dir "gestor-error.log") -WindowStyle Hidden -PassThru
+                    $p.Id | Out-File (Join-Path $dir "gestor.pid") -Encoding ascii
+                    for ($i = 0; $i -lt 60; $i++) {
+                        try {
+                            (New-Object Net.Sockets.TcpClient).Connect("localhost", 8081)
+                            Write-Host "Gestor listo en el puerto 8081"
+                            exit 0
+                        } catch {
+                            Start-Sleep -Seconds 3
+                        }
+                    }
+                    throw "El Gestor no arranco en 3 minutos"
+                '''
+            }
+        }
+
+        stage('Compilar y probar (JaCoCo)') {
             steps {
                 dir('Ejercicio5Cliente') {
-                    bat 'mvn -B clean test -Dtest=GestorControllerAutoTest'
+                    // clean verify: compila, corre las pruebas contra el Gestor y genera el reporte de JaCoCo
+                    bat 'mvn -B clean verify'
                 }
             }
         }
-        stage('Empaquetar') {
+
+        stage('Analisis SonarQube') {
             steps {
                 dir('Ejercicio5Cliente') {
-                    bat 'mvn -B package -DskipTests'
+                    // El analisis excluye las carpetas target y espera el resultado del Quality Gate
+                    bat 'mvn -B org.sonarsource.scanner.maven:sonar-maven-plugin:5.5.0.6356:sonar "-Dsonar.projectKey=%PROYECTO%" "-Dsonar.projectName=%PROYECTO%" "-Dsonar.host.url=%SONAR_URL%" "-Dsonar.exclusions=**/target/**" "-Dsonar.qualitygate.wait=true"'
                 }
             }
         }
@@ -31,8 +77,18 @@ pipeline {
 
     post {
         always {
+            // Se apaga solo el Gestor que arranco este pipeline (por su PID)
+            powershell '''
+                $pidFile = Join-Path $env:WORKSPACE "Ejercicio5MyAPIGestor\\gestor.pid"
+                if (Test-Path $pidFile) {
+                    $id = [int](Get-Content $pidFile)
+                    Stop-Process -Id $id -Force -ErrorAction SilentlyContinue
+                    Remove-Item $pidFile -Force
+                }
+                exit 0
+            '''
             junit allowEmptyResults: true, testResults: 'Ejercicio5Cliente/target/surefire-reports/*.xml'
-            archiveArtifacts artifacts: 'Ejercicio5Cliente/target/*.jar, Ejercicio5Cliente/target/site/jacoco/**', allowEmptyArchive: true
+            archiveArtifacts artifacts: 'Ejercicio5Cliente/target/*.jar, Ejercicio5Cliente/target/site/jacoco/**, Ejercicio5MyAPIGestor/gestor.log', allowEmptyArchive: true
         }
     }
 }
